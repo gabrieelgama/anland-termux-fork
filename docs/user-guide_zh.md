@@ -136,6 +136,33 @@ echo $TERMUX_APP__APK_RELEASE
 > * 建议额外安装 [Termux API](https://github.com/termux/termux-api)，它将提高在 Termux Native 和 PRoot 容器中运行桌面的稳定性。
 > * 在 Termux Native 中运行 KDE Plasma Wayland，还需额外安装修改版的 LayerShellQt：<https://github.com/lfdevs/termux-packages/releases/tag/layer-shell-qt_6.7.5-1>
 
+### 在容器中显示 Android 电池信息
+
+如果容器可以读取内核的 `/sys/class/power_supply` 条目，Linux 桌面就可以
+显示 Android 电池信息。桥接程序会在运行时发现设备，不会假设电池名称固定或
+设备来自三星。不同厂商的内核和 Android 版本仍会影响兼容性；部分设备或 PRoot
+配置不会向容器公开可读的电池信息。
+
+只有在系统 D-Bus 上没有其他 UPower 服务时，才需要使用可选的 UPower 桥接程序。
+它不依赖 systemd。在容器中安装 Python D-Bus 绑定（如果尚未安装），从 Anland Termux
+fork 下载脚本，然后检查电池信息是否可见：
+
+```sh
+curl --fail --location --output anland-upower-bridge.py \
+  https://raw.githubusercontent.com/gabrieelgama/anland-termux-fork/main/scripts/anland-upower-bridge.py
+sudo apt install python3-dbus python3-gi
+python3 anland-upower-bridge.py --check
+```
+
+如果检查发现了电池，且当前没有 UPower 服务运行，可在桌面所在的容器会话中启动：
+
+```sh
+python3 anland-upower-bridge.py
+```
+
+此桥接程序默认不自动启动，因为它不能替代已经运行的 UPower 服务。它只读取电池
+信息并通过系统 D-Bus 发布，不会控制充电或关闭 Android 设备。按 `Ctrl+C` 停止。
+
 4. 在实际运行环境中安装 Freedreno (KGSL) 驱动。
 
    对于 Termux Native，请按照该页面的说明进行安装：<https://github.com/lfdevs/termux-packages/releases/latest>。

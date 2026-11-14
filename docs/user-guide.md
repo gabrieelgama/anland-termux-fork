@@ -145,6 +145,37 @@ Or, to run Anland: Termux with GNOME in Termux Native using the GitHub Termux re
 > * Installing [Termux:API](https://github.com/termux/termux-api) is recommended; it improves desktop stability in Termux Native and PRoot containers.
 > * When running KDE Plasma Wayland in Termux Native, you must also install the modified LayerShellQt package: <https://github.com/lfdevs/termux-packages/releases/tag/layer-shell-qt_6.7.5-1>
 
+### Android battery information in a container
+
+Linux desktops can show Android battery information when the container can read
+the kernel's `/sys/class/power_supply` entries. Device names are discovered at
+runtime; the bridge does not assume a Samsung model or a fixed battery name.
+Kernel and Android vendor differences still apply, and some devices or PRoot
+configurations do not expose readable battery entries.
+
+The optional UPower bridge is useful only if no UPower service already owns the
+system D-Bus name. It does not require systemd. In the container, install its
+Python D-Bus bindings if they are not already present. Download the script from
+the Anland Termux fork and check whether the battery data is visible:
+
+```sh
+curl --fail --location --output anland-upower-bridge.py \
+  https://raw.githubusercontent.com/gabrieelgama/anland-termux-fork/main/scripts/anland-upower-bridge.py
+sudo apt install python3-dbus python3-gi
+python3 anland-upower-bridge.py --check
+```
+
+If the check finds a battery and no existing UPower service is running, start
+the bridge in the same container session as the desktop:
+
+```sh
+python3 anland-upower-bridge.py
+```
+
+The bridge is opt-in because it cannot replace an existing UPower daemon. It
+only reads battery data and publishes it on the system D-Bus; it does not
+control charging or power off the Android device. Stop it with `Ctrl+C`.
+
 4. Install the Freedreno (KGSL) driver in your runtime environment.
 
    For Termux Native, follow the instructions on this page: <https://github.com/lfdevs/termux-packages/releases/latest>.
